@@ -1,200 +1,76 @@
-# 📊 Dataset Validator for Intent Classification Agent
+# Dataset Validator & Cleaner (Multilingual Intent Dataset)
 
-## 📌 Overview
+This folder contains a Python script that validates and cleans a multilingual intent dataset used for an intent classification agent.
 
-This project is a **Python-based dataset validation tool** designed to evaluate the quality of a JSON dataset used for training an intent classification agent.
+## Dataset format
+Each entry in `final_dataset_balanced_12000.json` is a JSON object with:
 
-The agent classifies queries into:
+- `id` (format: `intent_language_number`)
+- `language` (one of: `english`, `hindi`, `gujarati`, `bengali`, `telugu`, `tamil`, `kannada`, `malayalam`)
+- `expected_response_type` (one of: `greetings`, `service_request`, `device_control`, `out_of_scope`)
+- `query` (kept in the original script/language)
+- `is_boundary` (boolean)
+- optional `sub_category`
+  - must exist for `service_request`
+  - may exist for `out_of_scope` only when it is `jebrish_commands`
 
-* `greetings`
-* `service_request`
-* `device_control`
-* `out_of_scope`
+Allowed `service_request` subcategories:
 
-This validator ensures that the dataset meets required standards such as:
+- `raise_service_request`
+- `explore_amc_plans`
+- `discover_new_products`
+- `check_loyalty_points`
+- `register_product`
+- `jebrish_commands`
 
-* No duplicate queries
-* Correct intent labeling
-* Standardized service request subcategories
-* Proper text encoding
+## What the script does
+`dataset_validator.py` is a **validator + cleaner**:
 
----
+- Validates `id` format and sequential numbering per `(expected_response_type, language)`
+- Validates that `sub_category` is present only when required (and is one of the allowed values)
+- Detects duplicates (per-language, normalized)
+- Detects broken/corrupted text and routes it to `out_of_scope` with `sub_category = "jebrish_commands"`
+- Rewrites `final_dataset_balanced_12000.json` into a consistent, native-script dataset while keeping the same overall balance and structure
+- Writes `dataset_report.json` in this structure:
 
-## 🎯 Objectives
-
-The tool validates whether the dataset fulfills the following requirements:
-
-1. Detect **duplicate queries**
-2. Identify **intent mismatches**
-3. Validate **service request subcategories**
-4. Detect **encoding issues (broken text)**
-
----
-
-## 📂 Project Structure
-
-```
-project-folder/
-│
-├── dataset_validator.py
-├── final_dataset_balanced_12000.json
-├── dataset_report.json   # (generated after running)
-└── README.md
-```
-
----
-
-## ⚙️ Requirements
-
-* Python 3.7 or above
-* No external libraries required (uses built-in modules)
-
----
-
-## ▶️ How to Run
-
-### Step 1: Clone or Download the Project
-
-Download the files or clone the repository:
-
-```
-git clone <your-repo-link>
-cd project-folder
+```json
+{
+  "summary": {
+    "total_samples": 12000,
+    "duplicates_found": 0,
+    "intent_mismatches": 0,
+    "fixed_samples": 0,
+    "encoding_issues": 0
+  },
+  "issues": {
+    "duplicates": [],
+    "mismatches": [],
+    "invalid_subcategories": [],
+    "encoding_issues": []
+  },
+  "corrected_dataset": []
+}
 ```
 
----
+Important: the script **overwrites** `final_dataset_balanced_12000.json` with the corrected dataset.
 
-### Step 2: Place Dataset File
+## Requirements
+- Python 3.7+
+- No external dependencies (standard library only)
 
-Make sure your dataset file is named:
+## How to run
+From this folder:
 
-```
-final_dataset_balanced_12000.json
-```
-
-and placed in the same folder as the script.
-
----
-
-### Step 3: Run the Script
-
-Execute the following command:
-
-```
+```bash
 python dataset_validator.py
 ```
 
----
+Optional paths:
 
-## 📈 Output
-
-After running, you will see a summary like:
-
-```
-Total samples: 12000
-
-Duplicate queries: 150
-Intent mismatches: 80
-Invalid subcategories: 300
-Encoding issues: 25
-
-===== FINAL REPORT =====
-...
+```bash
+python dataset_validator.py --dataset final_dataset_balanced_12000.json --report dataset_report.json
 ```
 
----
+## Notes (Windows console)
+If your terminal prints Unicode text as `????` but the JSON looks correct in your editor, it’s usually a console/codepage issue. The dataset itself is written as UTF-8 JSON.
 
-## 📄 Generated Report
-
-A file named:
-
-```
-dataset_report.json
-```
-
-will be created, containing sample issues:
-
-* Duplicate queries
-* Mismatched intents
-* Invalid subcategories
-* Encoding problems
-
----
-
-## 🧠 Validation Logic
-
-### ✅ Duplicate Detection
-
-Checks for repeated queries (case-insensitive).
-
----
-
-### ⚠️ Intent Mismatch Detection
-
-Uses keyword-based rules:
-
-| Type            | Example Keywords               |
-| --------------- | ------------------------------ |
-| Device Control  | turn on, set, off              |
-| Service Request | repair, fix, service, register |
-| Out of Scope    | what is, explain, who is       |
-
----
-
-### 📦 Subcategory Validation
-
-Allowed subcategories:
-
-* `raise_service_request`
-* `explore_amc_plans`
-* `discover_new_products`
-* `check_loyalty_points`
-* `register_product`
-* `jebrish_commands`
-
-Any other subcategory is flagged as invalid.
-
----
-
-### 🔤 Encoding Check
-
-Detects broken or corrupted text such as:
-
-```
-à¤¸à¥à¤®...
-```
-
----
-
-## 🚀 Future Improvements
-
-* Add **fuzzy duplicate detection**
-* Improve **intent classification rules**
-* Add **language validation**
-* Generate **dataset quality score**
-
----
-
-## 🤝 Contribution
-
-Feel free to improve:
-
-* Validation rules
-* Performance
-* Reporting format
-
----
-
-## 📌 Notes
-
-* This tool is designed for **pre-training dataset validation**
-* Helps improve model accuracy by ensuring clean data
-* Works across **multiple languages**
-
----
-
-## 👨‍💻 Author
-
-Built for validating multilingual intent classification datasets.
-
----
